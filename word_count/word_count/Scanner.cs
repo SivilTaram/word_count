@@ -66,27 +66,72 @@ namespace word_count
 
         public void CountWord()
         {
-            Stopwatch Watch = new Stopwatch();
-            Watch.Start();
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
 
-            WordDict = new Dictionary<string, int>();            
-            Watch.Start();
+            WordDict = new Dictionary<string, int>();
 
+            char[] splitChars = new char[] {' ', '.',',','\'','"','(',')','?','!',';',':'};
             Parallel.ForEach(FilePaths, sFile =>
             {
                 try
                 {
                     Dictionary<string, int> localWordDict = new Dictionary<string, int>();
-                    string allLine = File.ReadAllText(sFile);
-                    allLine = Regex.Replace(allLine, "[^a-zA-Z0-9]", " ");
-                    string[] splits = allLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var word in splits)
+                    int start = 0;
+                    int end = 0;
+                    bool isToken = true;
+                    string substr = null;
+                    foreach (string line in File.ReadLines(sFile,Encoding.UTF8))
                     {
-                        if (localWordDict.ContainsKey(word))
-                            localWordDict[word]++;
-                        else
-                            localWordDict.Add(word, 1);
+                        start = 0;
+                        end = 0;
+                        isToken = true;
+                        foreach(char c in line)
+                        {
+                            if ( (c >= 'a' & c <= 'z') | (c >= 'A' & c <= 'Z') )
+                            {
+                                end ++;
+                            }
+                            else if (!splitChars.Contains(c))
+                            {
+                                if(c != '-')
+                                    isToken = false;
+                                end ++;
+                            }
+                            else
+                            {
+                                if (end > start && isToken)
+                                {
+                                    substr = line.Substring(start, end - start);
+                                    if (localWordDict.ContainsKey(substr))
+                                        localWordDict[substr]++;
+                                    else
+                                        localWordDict.Add(substr, 1);
+                                }
+                                end ++;
+                                start = end;
+                                isToken = true;
+                            }
+                        }
+                        if (end > start && isToken)
+                        {
+                            substr = line.Substring(start, end - start);
+                            if (localWordDict.ContainsKey(substr))
+                                localWordDict[substr]++;
+                            else
+                                localWordDict.Add(substr, 1);
+                        }
                     }
+                    //string allLine = File.ReadAllText(sFile);
+                    //allLine = Regex.Replace(allLine, "[^a-zA-Z0-9]", " ");
+                    //string[] splits = allLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    //foreach (var word in splits)
+                    //{
+                    //    if (localWordDict.ContainsKey(word))
+                    //        localWordDict[word]++;
+                    //    else
+                    //        localWordDict.Add(word, 1);
+                    //}
                     lock (WordDict)
                     {
                         foreach (var pair in localWordDict)
@@ -100,6 +145,7 @@ namespace word_count
                 }
                 catch { }
             });
+
             WordDict = WordDict.OrderByDescending(o => o.Value).ToDictionary(p => p.Key, o => o.Value);
             int index = 0;
             foreach(var pair in WordDict)
@@ -112,8 +158,8 @@ namespace word_count
                 Console.WriteLine("Key:{0},Value:{1}", pair.Key, pair.Value);
             }
 
-            Watch.Stop();
-            Console.WriteLine("Spent time:{0}", Watch.ElapsedMilliseconds);
+            watch.Stop();
+            Console.WriteLine("Spent time:{0}", watch.ElapsedMilliseconds);
         }
 
     }

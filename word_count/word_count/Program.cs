@@ -9,8 +9,8 @@ namespace word_count
     class Program
     {
         static void Main(string[] args)
-        {
-            Scanner scan = new Scanner(@"\\msrasia\share\ASE\novel");
+         {
+            Scanner scan = new Scanner(@"D:/123");
             scan.CountWord();
         }
 
