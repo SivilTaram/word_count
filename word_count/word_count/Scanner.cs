@@ -72,11 +72,11 @@ namespace word_count
 
             WordDict = new Dictionary<string, int>();
 
-            foreach (var sFile in FilePaths)
+            Parallel.ForEach(FilePaths, sFile =>
             {
                 try
                 {
-                    char[] splitChars = new char[] { ' ', '/', '\'', '.', ',', '"', '(', ')', '[', ']', '?', '!', ';', ':', (char)65533, '\t', '\n', '\b', '*','<','>','-' };
+                    char[] splitChars = new char[] { ' ', '/', '\'', '.', ',', '"', '(', ')', '[', ']', '?', '!', ';', ':', (char)65533, '\t', '\n', '\b', '*', '<', '>', '-' };
                     Dictionary<string, int> localWordDict = new Dictionary<string, int>();
                     int start = 0;
                     int end = 0;
@@ -152,7 +152,7 @@ namespace word_count
                     }
                 }
                 catch { }
-            }
+            });
 
             WordDict = WordDict.OrderByDescending(o => o.Value).ToDictionary(p => p.Key, o => o.Value);
             int index = 0;
@@ -165,9 +165,6 @@ namespace word_count
                 index++;
                 Console.WriteLine("Key:{0},Value:{1}", pair.Key, pair.Value);
             }
-
-            watch.Stop();
-            Console.WriteLine("Spent time:{0}", watch.ElapsedMilliseconds);
         }
 
     }
