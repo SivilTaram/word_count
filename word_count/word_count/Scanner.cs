@@ -14,10 +14,11 @@ namespace word_count
     {
         public string RootDirectory { get; set; }
         private IEnumerable<string> _filePath;
-        public IEnumerable<string> FilePaths {
+        public IEnumerable<string> FilePaths
+        {
             get
             {
-                if(_filePath == null)
+                if (_filePath == null)
                 {
                     _filePath = GetFiles(RootDirectory, "*.txt");
                 }
@@ -25,7 +26,7 @@ namespace word_count
             }
         }
 
-        public Dictionary<string,int> WordDict { get; set; }
+        public Dictionary<string, int> WordDict { get; set; }
 
         public Scanner(string root)
         {
@@ -39,12 +40,12 @@ namespace word_count
             }
         }
 
-        public IEnumerable<string> GetFiles(string root,string searchPattern)
+        public IEnumerable<string> GetFiles(string root, string searchPattern)
         {
             List<string> paths = new List<string>();
             Stack<string> pending = new Stack<string>();
             pending.Push(root);
-            while(pending.Count != 0)
+            while (pending.Count != 0)
             {
                 var path = pending.Pop();
                 string[] next = null;
@@ -64,42 +65,55 @@ namespace word_count
             }
         }
 
-        public void CountWord()
+        public void CountWord(int count)
         {
             Stopwatch watch = new Stopwatch();
             watch.Start();
 
             WordDict = new Dictionary<string, int>();
 
-            char[] splitChars = new char[] {' ', '.',',','\'','"','(',')','?','!',';',':'};
-            Parallel.ForEach(FilePaths, sFile =>
+            foreach (var sFile in FilePaths)
             {
                 try
                 {
+                    char[] splitChars = new char[] { ' ', '/', '\'', '.', ',', '"', '(', ')', '[', ']', '?', '!', ';', ':', (char)65533, '\t', '\n', '\b', '*','<','>','-' };
                     Dictionary<string, int> localWordDict = new Dictionary<string, int>();
                     int start = 0;
                     int end = 0;
                     bool isToken = true;
                     string substr = null;
-                    foreach (string line in File.ReadLines(sFile,Encoding.UTF8))
+                    foreach (string line in File.ReadLines(sFile, Encoding.UTF8))
                     {
                         start = 0;
                         end = 0;
                         isToken = true;
-                        foreach(char c in line)
+                        char c = ' ';
+                        int length = line.Count();
+                        for (int i = 0; i < length; i++)
                         {
-                            if ( (c >= 'a' & c <= 'z') | (c >= 'A' & c <= 'Z') )
+                            c = line[i];
+                            if (char.IsLetter(c))
                             {
-                                end ++;
+                                end++;
                             }
                             else if (!splitChars.Contains(c))
                             {
-                                if(c != '-')
+                                // 'What ...
+                                // didn't
+                                // .. father'
+                                if (c != '-')
+                                {
                                     isToken = false;
-                                end ++;
+                                }
+                                end++;
                             }
                             else
                             {
+                                //if (c == '\'' && (i >= 1 & char.IsLetter(line[i - 1])) && ((i <= length - 1) & char.IsLetter(line[i + 1])))
+                                //{
+                                //    end++;
+                                //    continue;
+                                //}
                                 if (end > start && isToken)
                                 {
                                     substr = line.Substring(start, end - start);
@@ -108,7 +122,11 @@ namespace word_count
                                     else
                                         localWordDict.Add(substr, 1);
                                 }
-                                end ++;
+                                else if (end != start)
+                                {
+
+                                }
+                                end++;
                                 start = end;
                                 isToken = true;
                             }
@@ -122,16 +140,6 @@ namespace word_count
                                 localWordDict.Add(substr, 1);
                         }
                     }
-                    //string allLine = File.ReadAllText(sFile);
-                    //allLine = Regex.Replace(allLine, "[^a-zA-Z0-9]", " ");
-                    //string[] splits = allLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    //foreach (var word in splits)
-                    //{
-                    //    if (localWordDict.ContainsKey(word))
-                    //        localWordDict[word]++;
-                    //    else
-                    //        localWordDict.Add(word, 1);
-                    //}
                     lock (WordDict)
                     {
                         foreach (var pair in localWordDict)
@@ -144,13 +152,13 @@ namespace word_count
                     }
                 }
                 catch { }
-            });
+            }
 
             WordDict = WordDict.OrderByDescending(o => o.Value).ToDictionary(p => p.Key, o => o.Value);
             int index = 0;
-            foreach(var pair in WordDict)
+            foreach (var pair in WordDict)
             {
-                if (index == 100)
+                if (index == count)
                 {
                     break;
                 }

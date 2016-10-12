@@ -10,8 +10,9 @@ namespace word_count
     {
         static void Main(string[] args)
          {
-            Scanner scan = new Scanner(@"D:/123");
-            scan.CountWord();
+            Scanner scan = new Scanner(args[0]);
+            scan.CountWord(Convert.ToInt32(args[1]));
+            Console.ReadKey();
         }
 
     }
